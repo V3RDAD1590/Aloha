@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>aloha config</title>
+<style>
+  :root{
+    --page:#FAFAFB; --pageTxt:#1a1a1a;
+    --panel:#000; --fg:#7fae86; --hi:#b4dcba; --dim:#3e5c44; --dimmer:#2a3e2e; --amber:#ffb62e;
+    --inputBg:#fcfcfd; --inputEdge:#c9ccd1;
+    --btnFace:#ffffff; --btnHover:#F0F0F0; --btnDown:#DCDCDC; --btnBorder:#A0A0A0; --btnTxt:#000;
+    --mono:'Consolas','DejaVu Sans Mono','Courier New',monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;background:var(--page);color:var(--pageTxt);
+    font-family:var(--mono);font-size:13px;line-height:1.3;overflow:hidden;}
+  #app{display:flex;flex-direction:column;height:100vh;}
+  #top{flex:none;padding:10px 12px 8px;}
+  .ctl{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+  .ctl label{color:var(--pageTxt);width:62px;flex:none;}
+  /* Height matched to ProxyPanel's inputs in the nav bar: a default WinForms TextBox
+     with a Fixed3D border sits at ~21px. box-sizing keeps the border inside that, so
+     the number here IS the rendered height rather than a starting point. */
+  /* Matched to ProxyPanel's inputs in the nav bar: a default WinForms TextBox is 20px
+     with a hard 1px #7a7a7a edge on plain white. --inputEdge (#c9ccd1) was the giveaway —
+     too pale and too soft, which read as a web form sitting inside a Win9x panel. */
+  .ctl input{width:560px;max-width:58vw;height:20px;box-sizing:border-box;
+    background:#000;color:var(--hi);
+    font-family:var(--mono);font-size:12px;padding:0 5px;outline:none;
+    border:1px solid;border-color:#808080 #fff #fff #808080;}   /* sunken: dark top-left, white bottom-right */
+  .ctl input:focus{color:#fff;}
+  #launch{color:var(--fg);}
+  /* follows the inputs down, or the row breaks */
+    .vin{font-family:var(--mono);font-size:12px;height:20px;box-sizing:border-box;width:150px;
+    padding:0 5px;background:#000;color:var(--hi);outline:none;
+    border:1px solid;border-color:#808080 #fff #fff #808080;}
+  .btn{font-family:Tahoma,var(--mono);font-size:11px;height:20px;box-sizing:border-box;padding:0 10px;cursor:pointer;
+    color:#000;background:#F0F0F0;border:1px solid;border-color:#808080 #fff #fff #808080;
+    border-radius:0;flex:none;white-space:nowrap;}
+  .btn:hover{background:#F7F7F7;}
+  .btn:active{background:#E4E4E4;border-color:#fff #808080 #808080 #fff;}
+  #panel{flex:1;display:flex;flex-direction:column;background:var(--panel);min-height:0;width:100%;border-top:1px solid #808080;box-shadow:inset 0 1px 0 #404040;}
+  #treewrap{flex:1;position:relative;overflow:hidden;min-height:0;}
+  #scroller{position:absolute;inset:0;overflow-y:auto;padding-top:6px;}
+  #spacer{position:relative;width:100%;}
+  .root{position:absolute;left:10px;color:var(--fg);font-weight:bold;height:18px;display:flex;align-items:center;}
+  .node{position:absolute;left:0;right:0;height:18px;cursor:pointer;overflow:hidden;
+    display:flex;align-items:center;color:var(--fg);}
+  .node:hover{background:#101a12;}
+  /* drawn tree lines: per-row vbar (full height) + elbow (half) + horizontal stub */
+  .vbar{position:absolute;width:1px;background:var(--dim);top:0;bottom:0;}
+  .elbow{position:absolute;width:1px;background:var(--dim);top:0;height:9px;}      /* down to mid */
+  .hstub{position:absolute;height:1px;background:var(--dim);top:9px;width:7px;}     /* mid to right */
+  .nm{overflow:hidden;text-overflow:ellipsis;color:var(--fg);white-space:pre;}
+  .node.sel{background:#1e3324;}
+  .node.sel .nm{color:var(--hi);}
+  .cnt{color:var(--dim);margin-left:6px;flex:none;}
+  .on .nm{color:var(--hi);font-weight:bold;}   /* an option that is SET: bright, like a torrc option name */
+  .fav{color:#ffd23b;margin-left:6px;flex:none;}
+  .st{margin-left:auto;margin-right:10px;font-size:10px;flex:none;color:var(--dim);}
+  .st.set{background:var(--hi);color:#000;padding:0 5px;font-weight:bold;}
+  #detail{flex:none;max-height:42%;overflow-y:auto;padding:8px 12px;background:#000;border-top:1px dashed var(--dim);}
+  .frow{display:flex;gap:8px;margin:2px 0;}
+  .frow .lbl{color:var(--dim);width:96px;flex:none;}
+  .frow .val{color:var(--fg);word-break:break-word;}
+  .frow .val.hi{color:var(--hi);}
+  .frow .val.warn{color:var(--amber);}
+  #raw{color:var(--dim);white-space:pre-wrap;word-break:break-all;font-size:12px;padding:8px 0 0;border-top:1px dashed var(--dimmer);margin-top:6px;}
+  .hint{color:var(--dimmer);padding:14px 0;}
+  #footer{flex:none;padding:6px 12px 10px;}
+  #dactions{display:flex;gap:10px;margin:4px 0;align-items:center;min-height:32px;}
+  #favMsg{color:#7a5c00;font-size:12px;}
+  #crumb{color:var(--pageTxt);padding-left:62px;word-break:break-all;}
+  #crumb b{color:#2f5a38;font-weight:bold;}
+  ::-webkit-scrollbar{width:17px;}
+  ::-webkit-scrollbar-track{background:#c0c0c0;box-shadow:inset 1px 0 #808080;}
+  ::-webkit-scrollbar-thumb{background:#c0c0c0;border:2px solid;border-color:#fff #000 #000 #fff;box-shadow:inset 1px 1px #dfdfdf,inset -1px -1px #808080;}
+  ::-webkit-scrollbar-button:vertical:decrement{height:17px;background:#c0c0c0 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='7' height='7'%3E%3Cpath d='M0.5 6H6.5L3.5 1z' fill='black'/%3E%3C/svg%3E") center/7px no-repeat;border:2px solid;border-color:#fff #000 #000 #fff;box-shadow:inset 1px 1px #dfdfdf,inset -1px -1px #808080;}
+  ::-webkit-scrollbar-button:vertical:increment{height:17px;background:#c0c0c0 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='7' height='7'%3E%3Cpath d='M0.5 1H6.5L3.5 6z' fill='black'/%3E%3C/svg%3E") center/7px no-repeat;border:2px solid;border-color:#fff #000 #000 #fff;box-shadow:inset 1px 1px #dfdfdf,inset -1px -1px #808080;}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="top">
+    <div class="ctl"><label>Search:</label><input id="search" autocomplete="off" spellcheck="false"><button class="btn" id="searchBtn">search</button></div>
+    <div class="ctl"><label>Launch:</label><input id="launch" readonly value=""><button class="btn" id="applyBtn">Apply Settings</button></div>
+  </div>
+  <div id="panel">
+    <div id="treewrap"><div id="scroller"><div id="spacer"></div></div></div>
+    <div id="detail"></div>
+  </div>
+  <div id="footer">
+    <div id="dactions"></div>
+  </div>
+</div>
+<script>
+const HOST=(window.chrome&&window.chrome.webview)?window.chrome.webview:null;
+function toHost(type,payload){const m={type,payload};if(HOST)HOST.postMessage(m);else console.log('[aloha->host]',m);}
+const CATS=["Networking","Privacy","Fingerprinting","Security","WebRTC","GPU","Rendering/Blink",
+  "Media","Autofill","Passwords","Permissions","Extensions","Content","Experimental","Testing","Uncategorized"];
+function synth(){
+  const seed=[
+    {name:"kEncryptedClientHello",feature_name:"EncryptedClientHello",kind:"feature",workable:true,default:"enabled",category:"Networking",source_file:"net/base/features.cc",description:"Encrypted ClientHello - hides the SNI server name from network observers."},
+    {name:"kReducedReferrerGranularity",feature_name:"ReducedReferrerGranularity",kind:"feature",workable:true,default:"enabled",category:"Privacy",source_file:"content/public/common/features.cc",description:"Reduce default Referer granularity for cross-origin requests."},
+    {name:"kForceWebRtcIPHandlingPolicy",switch_string:"force-webrtc-ip-handling-policy",kind:"switch",workable:true,category:"WebRTC",source_file:"content/public/common/content_switches.cc",description:"Force the WebRTC IP handling policy (mitigates local-IP leak)."},
+    {name:"kDisableReadingFromCanvas",switch_string:"disable-reading-from-canvas",kind:"switch",workable:true,category:"Fingerprinting",source_file:"content/public/common/content_switches.cc",description:"Block canvas readback - anti-fingerprinting."},
+    {name:"kHostResolverRules",switch_string:"host-resolver-rules",kind:"switch",workable:true,category:"Networking",source_file:"services/network/public/cpp/network_switches.cc",description:"Override host resolution rules."},
+    {name:"kNoSandbox",switch_string:"no-sandbox",kind:"switch",workable:true,category:"Security",source_file:"sandbox/policy/switches.cc",description:"Disable the sandbox. Dangerous; testing only."}
+  ];
+  const out=seed.slice();
+  for(let i=0;i<8000;i++){const c=CATS[i%CATS.length];out.push({name:"kSynthSwitch"+i,switch_string:"synth-switch-"+i,kind:"switch",workable:true,category:c,source_file:c.toLowerCase()+"/switches.cc",description:i%4===0?"Synthetic switch "+i+".":""});}
+  for(let f=0;f<4000;f++){const c=CATS[f%CATS.length];out.push({name:"kSynthFeature"+f,feature_name:"SynthFeature"+f,kind:"feature",workable:true,default:f%3===0?"enabled":"disabled",category:c,source_file:c.toLowerCase()+"/features.cc",description:f%5===0?"Synthetic feature "+f+".":""});}
+  for(let s=0;s<18000;s++){const c=CATS[s%CATS.length];out.push({name:"kSynthConst"+s,value:"some.internal.string."+s,kind:"string-const",workable:false,category:c,source_file:c.toLowerCase()+"/strings.cc",description:""});}
+  return out;
+}
+let CATALOG=synth();
+window.setCatalog=function(json){try{const d=(typeof json==='string')?JSON.parse(json):json;CATALOG=d.flags||d;index();render(true);}catch(e){console.error(e);}};
+const overrides={},favourites={};
+/* Host -> page state restore. compose() walks CATALOG reading `overrides`, so these
+   MUST be called after setCatalog(). Without them `overrides` is {} on every load and
+   every saved toggle reads as lost — the state was on disk the whole time, the page
+   was just never told. Both accept a JSON string or an already-parsed value. */
+window.setOverrides=function(json){try{
+  const d=(typeof json==='string')?(json?JSON.parse(json):{}):(json||{});
+  for(const k in overrides)delete overrides[k];
+  for(const k in d)overrides[k]=d[k];
+  compose();paint();
+}catch(e){console.error('setOverrides',e);}};
+window.setFavourites=function(json){try{
+  const d=(typeof json==='string')?(json?JSON.parse(json):[]):(json||[]);
+  for(const k in favourites)delete favourites[k];
+  (Array.isArray(d)?d:[]).forEach(id=>{favourites[id]=true;});
+  paint();
+}catch(e){console.error('setFavourites',e);}};
+function idOf(e){return e.switch_string||e.feature_name||e.name;}
+let query="",byCat={},expanded={},rows=[],selId=null,orderedCats=[];
+function index(){
+  byCat={};const q=query.toLowerCase();
+  for(const e of CATALOG){
+    if(q){const hit=(e.name||"").toLowerCase().includes(q)||(e.switch_string||"").toLowerCase().includes(q)
+      ||(e.feature_name||"").toLowerCase().includes(q)||(e.value||"").toLowerCase().includes(q)
+      ||(e.description||"").toLowerCase().includes(q);if(!hit)continue;}
+    (byCat[e.category]=byCat[e.category]||[]).push(e);
+  }
+  for(const c in byCat)byCat[c].sort((a,b)=>(a.workable===b.workable)?0:(a.workable?-1:1));
+  orderedCats=[...CATS.filter(c=>byCat[c]),...Object.keys(byCat).filter(c=>!CATS.includes(c))];
+  if(q){for(const c in byCat)expanded[c]=true;}
+}
+function flatten(){
+  rows=[];
+  orderedCats.forEach((c,ci)=>{
+    const lastCat=ci===orderedCats.length-1;
+    rows.push({type:'folder',cat:c,n:byCat[c].length,lastCat});
+    if(expanded[c]){const arr=byCat[c];arr.forEach((e,ei)=>rows.push({type:'leaf',e,lastCat,lastLeaf:ei===arr.length-1}));}
+  });
+}
+const ROW=18,scroller=document.getElementById('scroller'),spacer=document.getElementById('spacer');
+let pool=[],rootEl=null;
+// geometry of drawn lines (px from left of node)
+const L0=10;   // category elbow x
+const L1=26;   // leaf elbow x (under category, indented)
+function render(reset){
+  flatten();spacer.style.height=((rows.length+2)*ROW+8)+"px";
+  if(!rootEl){rootEl=document.createElement('div');rootEl.className='root';rootEl.textContent='Aloha';scroller.appendChild(rootEl);}
+  rootEl.style.top='0px';if(reset)scroller.scrollTop=0;paint();
+}
+function paint(){
+  const top=scroller.scrollTop,h=scroller.clientHeight,OFF=1;
+  const first=Math.max(0,Math.floor(top/ROW)-4),last=Math.min(rows.length,Math.ceil((top+h)/ROW)+4);
+  while(pool.length<(last-first)){const d=document.createElement('div');d.className='node';scroller.appendChild(d);pool.push(d);}
+  for(let p=0;p<pool.length;p++){const el=pool[p],idx=first+p;
+    if(idx>=last||idx>=rows.length){el.style.display='none';continue;}
+    el.style.display='flex';el.style.top=((idx+OFF)*ROW)+"px";drawNode(el,rows[idx]);}
+}
+function drawNode(el,r){
+  if(r.type==='folder'){
+    el.className='node folder';
+    let lines='';
+    // category elbow at L0 (down-half + stub). vbar continues if not last category.
+    lines+='<span class="elbow" style="left:'+L0+'px"></span>';
+    lines+='<span class="hstub" style="left:'+L0+'px"></span>';
+    if(!r.lastCat) lines+='<span class="vbar" style="left:'+L0+'px;top:9px"></span>'; // continue down from mid
+    el.innerHTML=lines+'<span class="nm" style="margin-left:'+(L0+10)+'px">'+esc(r.cat.toLowerCase())+'</span><span class="cnt">['+r.n.toLocaleString()+']</span>';
+    el.onclick=()=>{expanded[r.cat]=!expanded[r.cat];render();};
+  }else{
+    const e=r.e,id=idOf(e),st=overrides[id];
+    el.className='node leaf '+(st==='on'?' on':'')+(id===selId?' sel':'');
+    let lines='';
+    // parent category vbar passes through this row at L0 (unless category was last)
+    if(!r.lastCat) lines+='<span class="vbar" style="left:'+L0+'px"></span>';
+    // leaf connector at L1
+    lines+='<span class="elbow" style="left:'+L1+'px"></span>';
+    lines+='<span class="hstub" style="left:'+L1+'px"></span>';
+    if(!r.lastLeaf) lines+='<span class="vbar" style="left:'+L1+'px;top:9px"></span>';
+    const title=e.switch_string||e.feature_name||e.name;
+    let stx=!e.workable?'':st==='on'?'<span class="st set">ON</span>':st==='off'?'<span class="st">off</span>':'';
+    let favx=favourites[id]?'<span class="fav">★</span>':'';
+    el.innerHTML=lines+'<span class="nm" style="margin-left:'+(L1+10)+'px">'+esc(title)+'</span>'+favx+stx;
+    el.onclick=()=>select(e);
+  }
+}
+function esc(s){return(s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function select(e){
+  selId=idOf(e);paint();
+  const st=overrides[idOf(e)];let body='';
+  body+=frow('kind',e.kind);
+  if(e.switch_string)body+=frow('switch','--'+e.switch_string);
+  if(e.feature_name)body+=frow('feature',e.feature_name);
+  if(e.default)body+=frow('default',e.default);
+  body+=frow('category',e.category);
+  body+=frow('workable',e.workable?'yes':'no - archive (inert)',e.workable?'':'warn');
+  if(e.source_file)body+=frow('source',e.source_file);
+  if(e.description)body+=frow('description',e.description);
+  body+=frow('state',!st?'unset (engine default)'
+    :st.charAt(0)==='='?'SET to '+st.slice(1)
+    :st==='on'?'ON (set)':'off (set)',st?'hi':'');
+  if(/no-sandbox|disable-web-security|allow-running-insecure|ignore-certificate-errors|disable-site-isolation/.test(e.switch_string||''))
+    body+=frow('caution','this one removes a safety boundary of the engine','warn');
+  let raw=e.kind==='feature'
+    ?'BASE_FEATURE('+e.name+', "'+e.feature_name+'",\n             base::FEATURE_'+String(e.default||'').toUpperCase()+'_BY_DEFAULT);'
+    :e.kind==='switch'?'const char '+e.name+'[] = "'+e.switch_string+'";'
+    :'const char '+e.name+'[] = "'+(e.value||'')+'";';
+  body+='<div id="raw">'+esc(raw)+'</div>';
+  document.getElementById('detail').innerHTML=body;
+  const da=document.getElementById('dactions');
+  if(e.workable){
+    const cur=overrides[idOf(e)]||'';
+    const val=cur.charAt(0)==='='?cur.slice(1):'';
+    da.innerHTML='<button class="btn" id="bOn">'+(e.kind==='feature'?'enable':'turn on')+'</button>'
+      +'<button class="btn" id="bOff">'+(e.kind==='feature'?'disable':'unset')+'</button>'
+      +(e.kind==='switch'
+        ?'<input id="bVal" class="vin" placeholder="value" value="'+esc(val)+'">'
+         +'<button class="btn" id="bSet">set</button>'
+        :'')
+      +'<button class="btn" id="bReset">reset</button>'
+      +'<button class="btn" id="bResetAll">reset all</button>'
+      +'<button class="btn" id="bExport">export settings</button>'
+      +'<button class="btn" id="bFav">favourite</button><span id="favMsg"></span>';
+    document.getElementById('bOn').onclick=()=>{setState(e,'on');select(e);};
+    document.getElementById('bOff').onclick=()=>{setState(e,e.kind==='feature'?'off':'unset');select(e);};
+    document.getElementById('bFav').onclick=()=>{favourite(e);};
+    document.getElementById('bReset').onclick=()=>{setState(e,'unset');select(e);};
+    document.getElementById('bResetAll').onclick=()=>{resetAll();};
+    document.getElementById('bExport').onclick=()=>{exportSettings();};
+    if(e.kind==='switch'){
+      const vi=document.getElementById('bVal');
+      const set=()=>{const v=vi.value.trim();setState(e,v?'='+v:'on');select(e);};
+      document.getElementById('bSet').onclick=set;
+      vi.onkeydown=(ev)=>{if(ev.key==='Enter')set();};
+    }
+  }else{ da.innerHTML=''; }
+}
+function frow(l,v,cls){return '<div class="frow"><span class="lbl">'+l+'</span><span class="val'+(cls?' '+cls:'')+'">'+esc(v)+'</span></div>';}
+function setState(e,state){
+  const id=idOf(e);if(state==='unset')delete overrides[id];else overrides[id]=state;
+  compose();paint();
+  toHost('toggle',{id,kind:e.kind,state:overrides[id]||'unset',switch_string:e.switch_string||null,feature_name:e.feature_name||null});
+}
+function resetAll(){
+  /* Clears the page's overrides AND re-composes, so Apply writes an empty
+     ExtraSwitches. Without the compose the line would still hold the old args and
+     "reset all" would be a lie until the next keystroke. */
+  for(const k in overrides)delete overrides[k];
+  compose();paint();
+  const s=document.getElementById('sel');
+  toHost('resetall',{});
+}
+function exportSettings(){
+  /* The composed line plus the structured map: the line is what the engine takes,
+     the map is what this page can read back. Exporting only the line would produce
+     a file that can't be re-imported. */
+  toHost('export',{args:compose(),overridesJson:JSON.stringify(overrides),
+                   favouritesJson:JSON.stringify(Object.keys(favourites))});
+}
+function favourite(e){
+  const id=idOf(e);favourites[id]=true;paint();
+  toHost('favourite',{id,kind:e.kind,switch_string:e.switch_string||null,feature_name:e.feature_name||null,
+    name:e.name,category:e.category,description:e.description||'',default:e.default||null});
+  const m=document.getElementById('favMsg');if(m){m.textContent='★ added to Browser Configuration';setTimeout(()=>{if(m)m.textContent='';},2000);}
+}
+function compose(){
+  const sw=[],en=[],dis=[];
+  for(const e of CATALOG){const st=overrides[idOf(e)];if(!st)continue;
+    /* A value override is stored as "=<value>". Chromium switches are not all
+       booleans — --force-effective-connection-type=4g, --host-resolver-rules=... —
+       and on/off/unset could never express those. The "=" prefix keeps overrides a
+       flat string map, so the host still round-trips it as opaque JSON. */
+    if(e.kind==='switch'&&st.charAt(0)==='=')sw.push('--'+e.switch_string+st);
+    else if(e.kind==='switch'&&st==='on')sw.push('--'+e.switch_string);
+    else if(e.kind==='feature'){if(st==='on')en.push(e.feature_name);else if(st==='off')dis.push(e.feature_name);}}
+  let parts=sw.slice();
+  if(en.length)parts.push('--enable-features='+en.join(','));
+  if(dis.length)parts.push('--disable-features='+dis.join(','));
+  const line=parts.join(' ');document.getElementById('launch').value=line;return line;
+}
+let t=null;
+function doSearch(){query=document.getElementById('search').value;index();render(true);}
+document.getElementById('search').addEventListener('input',()=>{clearTimeout(t);t=setTimeout(doSearch,90);});
+document.getElementById('searchBtn').onclick=doSearch;
+scroller.addEventListener('scroll',()=>requestAnimationFrame(paint));
+window.addEventListener('resize',paint);
+document.getElementById('applyBtn').onclick=()=>{toHost('apply',{args:compose(),overridesJson:JSON.stringify(overrides),favouritesJson:JSON.stringify(Object.keys(favourites))});};
+index();render(true);
+</script>
+</body>
+</html>

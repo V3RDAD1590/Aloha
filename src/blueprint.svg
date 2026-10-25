@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160">
+  <!-- Seamless blueprint / graph-paper tile. Repeats at a fixed pixel size so the
+       squares stay constant as the window resizes (like millimeter paper).
+       Minor squares every 32px; a brighter major line every tile edge (160px).
+       Lime palette tuned to the console (#33FF66): near-black ground, dim lime
+       minor grid, full console-lime major lines. -->
+  <rect width="160" height="160" fill="#000"/>
+  <g stroke="#1c6e36" stroke-width="1" fill="none" shape-rendering="crispEdges">
+    <path d="M32 0V160 M64 0V160 M96 0V160 M128 0V160"/>
+    <path d="M0 32H160 M0 64H160 M0 96H160 M0 128H160"/>
+  </g>
+  <g stroke="#33ff66" stroke-width="1.4" fill="none" shape-rendering="crispEdges">
+    <path d="M0 0V160 M0 0H160"/>
+  </g>
+</svg>
