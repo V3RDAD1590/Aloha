@@ -1,4 +1,5 @@
 # Aloha Browser
+[![DOI](https://zenodo.org/badge/1433687943.svg)](https://doi.org/10.5281/zenodo.23652656)
 
 A retro-styled, freedom oriented Windows browser built on **WebView2** (Chromium) in
 C# / WinForms. One borderless Win9x-flavoured window, but underneath it is a full
