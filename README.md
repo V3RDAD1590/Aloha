@@ -117,7 +117,7 @@ Although the build is still in development.
   The IPv7 window polls the gateway's `status.json` (session, address, uptime,
   pages served/failed, a sites list) and can start the client. `ipv7://name/path`
   rewrites to the gateway.
-- **DEEP protocol**: `deep://authority/path` is served by running an external
+- **[DEEP protocol](https://github.com/flozdrelx/DEEP-protocol)**: `deep://authority/path` is served by running an external
   `deep.exe request`, with the request marshalled as JSON over stdin/stdout. One
   virtual origin per authority. (The DEEP tool itself is a separate project — supply
   your own `deep\bin\deep.exe`.)
