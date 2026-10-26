@@ -123,6 +123,9 @@ Although the build is still in development.
   your own `deep\bin\deep.exe`.)
 
 ### Inspection & developer tools
+
+<img width="1745" height="740" alt="image" src="https://github.com/user-attachments/assets/09400998-f1c9-44fa-b987-7a467e838a0b" />
+
 - **Live headers**: a passive feed of every request/response header.
 - **Intercept proxy**: an HTTPS-intercepting MITM proxy (Titanium.Web.Proxy) that can
   chain to an upstream SOCKS/HTTP proxy; creates and trusts a local root CA on first use.
